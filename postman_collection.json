@@ -1,0 +1,42 @@
+{
+  "info": {
+    "name": "SSH Self-Healing Demo",
+    "description": "Trigger self-healing and inspect reports",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "http://localhost:8000/health"
+      }
+    },
+    {
+      "name": "Trigger Heal",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"alert\": \"ServiceProcessDown\",\n  \"service_name\": \"billing-api.service\",\n  \"severity\": \"critical\",\n  \"host\": \"wsl-ubuntu\",\n  \"message\": \"billing-api.service inactive / failed\"\n}"
+        },
+        "url": "http://localhost:8000/trigger/heal"
+      }
+    },
+    {
+      "name": "List Reports",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "http://localhost:8000/api/reports"
+      }
+    }
+  ]
+}

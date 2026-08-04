@@ -1,0 +1,122 @@
+{
+  "timestamp": "2026-08-03T05:39:59Z",
+  "service_name": "billing-api.service",
+  "ssh_host": "ramandeepsingh@172.23.69.108",
+  "agent_response": "\u2705 Full recovery confirmed on first attempt. Here is the complete JSON summary:\n\n---\n\n```json\n{\n  \"timestamp\": \"2026-08-03T05:39:59Z\",\n  \"service_name\": \"billing-api.service\",\n  \"initial_status\": \"inactive (dead)\",\n  \"root_cause_analysis\": {\n    \"failure_type\": \"Graceful external stop \u2014 NOT a crash\",\n    \"detail\": \"The service was stopped via a systemd SIGTERM signal (code=killed, signal=TERM) at 2026-08-03T05:39:35Z. The process exited cleanly with 'Deactivated successfully.' No FATAL, ERROR, panic, or exception was found in either journald or /var/log/billing-api/application.log. The stoppage pattern is consistent with a deliberate 'systemctl stop' or a host reboot/shutdown cycle \u2014 confirmed by multiple prior boot-boundary entries in the journal. The last successful health check was logged at 05:22:13 UTC (GET /health 200 OK), ~17 minutes before the stop.\",\n    \"crash_detected\": false,\n    \"error_in_logs\": false,\n    \"repeated_stop_pattern\": true,\n    \"probable_cause\": \"Manual or automated external stop (systemctl stop / host maintenance), not an application fault\"\n  },\n  \"actions_taken\": [\n    {\n      \"step\": 1,\n      \"action\": \"systemctl is-active billing-api.service\",\n      \"result\": \"inactive\",\n      \"timestamp\": \"2026-08-03T05:39:49Z\"\n    },\n    {\n      \"step\": 2,\n      \"action\": \"systemctl status billing-api.service --no-pager\",\n      \"result\": \"Active: inactive (dead) since Mon 2026-08-03 05:39:35 UTC; Process killed via SIGTERM\",\n      \"timestamp\": \"2026-08-03T05:39:49Z\"\n    },\n    {\n      \"step\": 3,\n      \"action\": \"journalctl -u billing-api.service -n 50 --no-pager\",\n      \"result\": \"No errors or crashes found; last entry was clean shutdown\",\n      \"timestamp\": \"2026-08-03T05:39:50Z\"\n    },\n    {\n      \"step\": 4,\n      \"action\": \"tail -60 /var/log/billing-api/application.log\",\n      \"result\": \"No errors; last entry: Aug 03 05:22:13 billing-api[108]: GET /health 200 OK\",\n      \"timestamp\": \"2026-08-03T05:39:50Z\"\n    },\n    {\n      \"step\": 5,\n      \"action\": \"sudo -n systemctl stop billing-api.service\",\n      \"result\": \"STOP_OK (service was already inactive; stop is idempotent)\",\n      \"timestamp\": \"2026-08-03T05:39:55Z\"\n    },\n    {\n      \"step\": 6,\n      \"action\": \"sudo -n systemctl start billing-api.service\",\n      \"result\": \"START_OK \u2014 attempt 1 of 3\",\n      \"timestamp\": \"2026-08-03T05:39:56Z\"\n    },\n    {\n      \"step\": 7,\n      \"action\": \"sleep 4 && systemctl is-active billing-api.service\",\n      \"result\": \"active\",\n      \"timestamp\": \"2026-08-03T05:40:03Z\"\n    }\n  ],\n  \"final_status\": \"active (running)\",\n  \"verification_result\": {\n    \"is_active\": true,\n    \"active_state\": \"active (running)\",\n    \"main_pid\": 15989,\n    \"process\": \"/usr/bin/python3 /opt/billing-api/app.py\",\n    \"uptime_at_check\": \"9 seconds\",\n    \"memory\": \"13.9 MB\",\n    \"cpu\": \"190ms\",\n    \"listening_port\": \"0.0.0.0:8080\",\n    \"health_check_passed\": true,\n    \"new_errors_after_restart\": false,\n    \"restart_attempts_needed\": 1\n  },\n  \"log_evidence\": {\n    \"failure_log\": [\n      \"Aug 03 05:39:35 FLY-LP931 systemd[1]: Stopping billing-api.service - Billing API Demo Service...\",\n      \"Aug 03 05:39:35 FLY-LP931 systemd[1]: billing-api.service: Deactivated successfully.\",\n      \"Aug 03 05:39:35 FLY-LP931 systemd[1]: Stopped billing-api.service - Billing API Demo Service.\",\n      \"Process: 108 ExecStart=/usr/bin/python3 /opt/billing-api/app.py (code=killed, signal=TERM)\"\n    ],\n    \"last_healthy_log_before_stop\": [\n      \"Aug 03 05:22:13 billing-api[108]: GET /health 200 OK\"\n    ],\n    \"recovery_log\": [\n      \"Aug 03 05:39:59 FLY-LP931 systemd[1]: Started billing-api.service - Billing API Demo Service.\",\n      \"Aug 03 05:39:59 billing-api[15989]: Loading configuration from /opt/billing-api/config.yaml\",\n      \"Aug 03 05:39:59 billing-api[15989]: Connecting to database...\",\n      \"Aug 03 05:39:59 billing-api[15989]: Database connection established\",\n      \"Aug 03 05:39:59 billing-api[15989]: Server listening on 0.0.0.0:8080\",\n      \"Aug 03 05:39:59 billing-api[15989]: billing-api started successfully - ready to accept requests\",\n      \"Aug 03 05:39:59 billing-api[15989]: Health check passed - all dependencies OK\"\n    ]\n  },\n  \"recommendations\": [\n    {\n      \"priority\": \"HIGH\",\n      \"item\": \"Investigate repeated stop pattern\",\n      \"detail\": \"The journal shows billing-api.service has been stopped and restarted numerous times across multiple boot sessions (Jul 29, Jul 31, Aug 03). This is abnormal for a production service. Determine whether a cron job, maintenance script, or system monitoring agent is issuing 'systemctl stop' unexpectedly.\"\n    },\n    {\n      \"priority\": \"HIGH\",\n      \"item\": \"Enable systemd auto-restart on failure\",\n      \"detail\": \"Add 'Restart=on-failure' and 'RestartSec=5s' to the [Service] section of /etc/systemd/system/billing-api.service so the service self-heals automatically without manual intervention. If the stops are deliberate, also consider 'Restart=always' with rate-limiting via StartLimitIntervalSec/StartLimitBurst.\"\n    },\n    {\n      \"priority\": \"MEDIUM\",\n      \"item\": \"Audit who is stopping the service\",\n      \"detail\": \"Run: journalctl _SYSTEMD_UNIT=billing-api.service | grep -i 'stop\\\\|kill' to cross-reference with audit logs (ausearch -c systemctl) to identify the UID/process issuing stop commands.\"\n    },\n    {\n      \"priority\": \"MEDIUM\",\n      \"item\": \"Add a systemd watchdog / health-check\",\n      \"detail\": \"Configure WatchdogSec= in the service unit and emit sd_notify(WATCHDOG=1) from the application to let systemd detect hangs and auto-restart, in addition to responding to SIGTERM.\"\n    },\n    {\n      \"priority\": \"LOW\",\n      \"item\": \"Persist application logs with log rotation\",\n      \"detail\": \"/var/log/billing-api/application.log contains entries dating back to Jul 29. Ensure logrotate is configured (e.g., daily, rotate 14) to prevent unbounded disk growth.\"\n    }\n  ]\n}\n```\n\n---\n\n## Summary\n\n| Field | Value |\n|---|---|\n| **Initial Status** | `inactive (dead)` \u2014 stopped 24 seconds before intervention |\n| **Root Cause** | Graceful external `SIGTERM` stop (no crash, no error) |\n| **Restart Attempts** | **1 of 3** \u2014 succeeded immediately |\n| **Final Status** | \u2705 `active (running)` \u2014 PID 15989, port 8080, health check passed |\n| **Recovery Time** | ~4 seconds (start \u2192 confirmed active) |\n\n**Key Finding:** The service had **no application-level error** \u2014 it was externally stopped (via `systemctl stop` or a system event). The biggest operational risk is the **repeated stop/restart pattern** visible across multiple days and boot sessions, which strongly suggests an uncontrolled external actor (cron job, orchestrator, or maintenance script) is interfering with the service lifecycle. Adding `Restart=on-failure` to the unit file is the most impactful immediate hardening step.\n",
+  "summary_output_path": "D:\\Flytxt\\CCAD\\ssh-service-demo\\reports\\healing-summary.json",
+  "initial_status": "inactive (dead)",
+  "root_cause_analysis": {
+    "failure_type": "Graceful external stop \u2014 NOT a crash",
+    "detail": "The service was stopped via a systemd SIGTERM signal (code=killed, signal=TERM) at 2026-08-03T05:39:35Z. The process exited cleanly with 'Deactivated successfully.' No FATAL, ERROR, panic, or exception was found in either journald or /var/log/billing-api/application.log. The stoppage pattern is consistent with a deliberate 'systemctl stop' or a host reboot/shutdown cycle \u2014 confirmed by multiple prior boot-boundary entries in the journal. The last successful health check was logged at 05:22:13 UTC (GET /health 200 OK), ~17 minutes before the stop.",
+    "crash_detected": false,
+    "error_in_logs": false,
+    "repeated_stop_pattern": true,
+    "probable_cause": "Manual or automated external stop (systemctl stop / host maintenance), not an application fault"
+  },
+  "actions_taken": [
+    {
+      "step": 1,
+      "action": "systemctl is-active billing-api.service",
+      "result": "inactive",
+      "timestamp": "2026-08-03T05:39:49Z"
+    },
+    {
+      "step": 2,
+      "action": "systemctl status billing-api.service --no-pager",
+      "result": "Active: inactive (dead) since Mon 2026-08-03 05:39:35 UTC; Process killed via SIGTERM",
+      "timestamp": "2026-08-03T05:39:49Z"
+    },
+    {
+      "step": 3,
+      "action": "journalctl -u billing-api.service -n 50 --no-pager",
+      "result": "No errors or crashes found; last entry was clean shutdown",
+      "timestamp": "2026-08-03T05:39:50Z"
+    },
+    {
+      "step": 4,
+      "action": "tail -60 /var/log/billing-api/application.log",
+      "result": "No errors; last entry: Aug 03 05:22:13 billing-api[108]: GET /health 200 OK",
+      "timestamp": "2026-08-03T05:39:50Z"
+    },
+    {
+      "step": 5,
+      "action": "sudo -n systemctl stop billing-api.service",
+      "result": "STOP_OK (service was already inactive; stop is idempotent)",
+      "timestamp": "2026-08-03T05:39:55Z"
+    },
+    {
+      "step": 6,
+      "action": "sudo -n systemctl start billing-api.service",
+      "result": "START_OK \u2014 attempt 1 of 3",
+      "timestamp": "2026-08-03T05:39:56Z"
+    },
+    {
+      "step": 7,
+      "action": "sleep 4 && systemctl is-active billing-api.service",
+      "result": "active",
+      "timestamp": "2026-08-03T05:40:03Z"
+    }
+  ],
+  "final_status": "active (running)",
+  "verification_result": {
+    "is_active": true,
+    "active_state": "active (running)",
+    "main_pid": 15989,
+    "process": "/usr/bin/python3 /opt/billing-api/app.py",
+    "uptime_at_check": "9 seconds",
+    "memory": "13.9 MB",
+    "cpu": "190ms",
+    "listening_port": "0.0.0.0:8080",
+    "health_check_passed": true,
+    "new_errors_after_restart": false,
+    "restart_attempts_needed": 1
+  },
+  "log_evidence": {
+    "failure_log": [
+      "Aug 03 05:39:35 FLY-LP931 systemd[1]: Stopping billing-api.service - Billing API Demo Service...",
+      "Aug 03 05:39:35 FLY-LP931 systemd[1]: billing-api.service: Deactivated successfully.",
+      "Aug 03 05:39:35 FLY-LP931 systemd[1]: Stopped billing-api.service - Billing API Demo Service.",
+      "Process: 108 ExecStart=/usr/bin/python3 /opt/billing-api/app.py (code=killed, signal=TERM)"
+    ],
+    "last_healthy_log_before_stop": [
+      "Aug 03 05:22:13 billing-api[108]: GET /health 200 OK"
+    ],
+    "recovery_log": [
+      "Aug 03 05:39:59 FLY-LP931 systemd[1]: Started billing-api.service - Billing API Demo Service.",
+      "Aug 03 05:39:59 billing-api[15989]: Loading configuration from /opt/billing-api/config.yaml",
+      "Aug 03 05:39:59 billing-api[15989]: Connecting to database...",
+      "Aug 03 05:39:59 billing-api[15989]: Database connection established",
+      "Aug 03 05:39:59 billing-api[15989]: Server listening on 0.0.0.0:8080",
+      "Aug 03 05:39:59 billing-api[15989]: billing-api started successfully - ready to accept requests",
+      "Aug 03 05:39:59 billing-api[15989]: Health check passed - all dependencies OK"
+    ]
+  },
+  "recommendations": [
+    {
+      "priority": "HIGH",
+      "item": "Investigate repeated stop pattern",
+      "detail": "The journal shows billing-api.service has been stopped and restarted numerous times across multiple boot sessions (Jul 29, Jul 31, Aug 03). This is abnormal for a production service. Determine whether a cron job, maintenance script, or system monitoring agent is issuing 'systemctl stop' unexpectedly."
+    },
+    {
+      "priority": "HIGH",
+      "item": "Enable systemd auto-restart on failure",
+      "detail": "Add 'Restart=on-failure' and 'RestartSec=5s' to the [Service] section of /etc/systemd/system/billing-api.service so the service self-heals automatically without manual intervention. If the stops are deliberate, also consider 'Restart=always' with rate-limiting via StartLimitIntervalSec/StartLimitBurst."
+    },
+    {
+      "priority": "MEDIUM",
+      "item": "Audit who is stopping the service",
+      "detail": "Run: journalctl _SYSTEMD_UNIT=billing-api.service | grep -i 'stop\\|kill' to cross-reference with audit logs (ausearch -c systemctl) to identify the UID/process issuing stop commands."
+    },
+    {
+      "priority": "MEDIUM",
+      "item": "Add a systemd watchdog / health-check",
+      "detail": "Configure WatchdogSec= in the service unit and emit sd_notify(WATCHDOG=1) from the application to let systemd detect hangs and auto-restart, in addition to responding to SIGTERM."
+    },
+    {
+      "priority": "LOW",
+      "item": "Persist application logs with log rotation",
+      "detail": "/var/log/billing-api/application.log contains entries dating back to Jul 29. Ensure logrotate is configured (e.g., daily, rotate 14) to prevent unbounded disk growth."
+    }
+  ],
+  "report_id": "healing-billing-api.service-20260803-053959"
+}

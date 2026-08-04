@@ -1,0 +1,97 @@
+{
+  "timestamp": "2026-08-03T06:01:09Z",
+  "service_name": "billing-api.service",
+  "ssh_host": "ramandeepsingh@172.23.69.108",
+  "report_id": "healing-billing-api.service-20260803-113054",
+  "alert": {
+    "alert": "ServiceProcessDown",
+    "service_name": "billing-api.service",
+    "severity": "critical",
+    "host": "wsl-ubuntu",
+    "message": "billing-api.service inactive / failed"
+  },
+  "agent_response": "All data collected. Here is the complete self-healing operation report:\n\n---\n\n## \ud83e\ude7a Self-Healing Operation Report \u2014 `billing-api.service`\n\n```json\n{\n  \"timestamp\": \"2026-08-03T06:01:09Z\",\n  \"service_name\": \"billing-api.service\",\n\n  \"initial_status\": {\n    \"state\": \"active (running)\",\n    \"pid\": 15989,\n    \"uptime_since\": \"2026-08-03T05:39:59Z\",\n    \"restarts_since_boot\": 0,\n    \"binary\": \"/usr/bin/python3 /opt/billing-api/app.py\",\n    \"memory\": \"11.5M\",\n    \"cpu\": \"560ms\"\n  },\n\n  \"root_cause_analysis\": {\n    \"current_incident\": \"NONE \u2014 service was found healthy on inspection.\",\n    \"historical_observations\": [\n      \"Multiple clean stop/start cycles visible across boot sessions (Jul 29, Jul 31, Aug 03), all intentional (Deactivated successfully \u2014 no crash or OOM evidence).\",\n      \"No FATAL, ERROR, CRITICAL, panic, or exception messages detected in either journalctl or /var/log/billing-api/application.log across the full log history.\",\n      \"NRestarts=0 confirms no systemd-triggered automatic restarts in the current boot session.\",\n      \"All startup sequences follow the expected pattern: config load \u2192 DB connect \u2192 bind port 8080 \u2192 ready \u2192 health check passed.\",\n      \"One GET /health 200 OK request logged at Aug 03 05:22:13 confirms the HTTP layer was responsive before the last planned restart.\"\n    ],\n    \"conclusion\": \"No failure condition exists. The service is stable, healthy, and requires no corrective action.\"\n  },\n\n  \"actions_taken\": [\n    \"STEP 1 \u2014 systemctl is-active billing-api.service          \u2192 returned: active\",\n    \"STEP 2 \u2014 systemctl status billing-api.service --no-pager  \u2192 confirmed Active: active (running) since 05:39:59 UTC\",\n    \"STEP 3 \u2014 journalctl -u billing-api.service -n 50          \u2192 no errors or warnings found\",\n    \"STEP 4 \u2014 cat /var/log/billing-api/application.log (tail)  \u2192 no errors or warnings found\",\n    \"STEP 5 \u2014 systemctl show (ActiveState/SubState/NRestarts)  \u2192 all nominal\",\n    \"RESTART SKIPPED \u2014 service is healthy; restart would introduce unnecessary downtime.\"\n  ],\n\n  \"final_status\": {\n    \"state\": \"active (running)\",\n    \"pid\": 15989,\n    \"uptime_since\": \"2026-08-03T05:39:59Z\",\n    \"restarts_since_boot\": 0,\n    \"health\": \"HEALTHY\"\n  },\n\n  \"verification_result\": {\n    \"is_active\": true,\n    \"no_errors_in_logs\": true,\n    \"health_check_passed\": true,\n    \"restart_was_needed\": false,\n    \"overall\": \"PASS \u2014 service is fully operational; no intervention required.\"\n  },\n\n  \"log_evidence\": {\n    \"most_recent_startup_sequence\": [\n      \"Aug 03 05:39:59 billing-api[15989]: Loading configuration from /opt/billing-api/config.yaml\",\n      \"Aug 03 05:39:59 billing-api[15989]: Connecting to database...\",\n      \"Aug 03 05:39:59 billing-api[15989]: Database connection established\",\n      \"Aug 03 05:39:59 billing-api[15989]: Server listening on 0.0.0.0:8080\",\n      \"Aug 03 05:39:59 billing-api[15989]: billing-api started successfully - ready to accept requests\",\n      \"Aug 03 05:39:59 billing-api[15989]: Health check passed - all dependencies OK\"\n    ],\n    \"most_recent_http_activity\": [\n      \"Aug 03 05:22:13 billing-api[108]: GET /health 200 OK\"\n    ],\n    \"failure_log_evidence\": \"NONE \u2014 no FATAL/ERROR/CRITICAL/panic/exception entries found across entire log history.\"\n  },\n\n  \"recommendations\": [\n    {\n      \"priority\": \"LOW\",\n      \"id\": \"R-01\",\n      \"title\": \"Add a Liveness/Readiness HTTP health-check probe\",\n      \"detail\": \"Integrate periodic curl/wget probes (e.g., via a systemd timer or external monitor) against http://localhost:8080/health so automated alerting triggers before manual intervention is needed.\"\n    },\n    {\n      \"priority\": \"LOW\",\n      \"id\": \"R-02\",\n      \"title\": \"Configure systemd auto-restart policy\",\n      \"detail\": \"Add Restart=on-failure and RestartSec=5s to the [Service] unit to enable self-healing at the systemd layer in the event of an unhandled crash, reducing MTTR without human intervention.\"\n    },\n    {\n      \"priority\": \"LOW\",\n      \"id\": \"R-03\",\n      \"title\": \"Enable structured log rotation for /var/log/billing-api/application.log\",\n      \"detail\": \"Ensure logrotate or the application's own handler caps log size so disk exhaustion does not become a future failure vector.\"\n    },\n    {\n      \"priority\": \"INFORMATIONAL\",\n      \"id\": \"R-04\",\n      \"title\": \"Investigate the series of planned stop/start cycles\",\n      \"detail\": \"The journal shows several clean Deactivated successfully \u2192 Started cycles across multiple boot sessions. If these are manual restarts, consider automating the triggering condition; if they are deployment events, ensure a zero-downtime rolling strategy is in place.\"\n    }\n  ]\n}\n```\n\n---\n\n### \ud83d\udccb Executive Summary\n\n| Field | Value |\n|---|---|\n| **Audit timestamp** | 2026-08-03T06:01:09Z |\n| **Service** | `billing-api.service` |\n| **Initial state** | \u2705 `active (running)` \u2014 PID 15989, uptime since 05:39:59 UTC |\n| **Failure detected?** | \u274c No \u2014 no crashes, no ERROR/FATAL messages in any log source |\n| **Restart performed?** | \u274c No \u2014 unnecessary; would cause avoidable downtime |\n| **Final state** | \u2705 `active (running)` \u2014 fully healthy |\n| **Restart count (boot)** | 0 (no systemd auto-restarts triggered) |\n| **Last health check** | `GET /health 200 OK` at 05:22:13 UTC |\n| **Overall verdict** | \u2705 **HEALTHY \u2014 No corrective action required** |\n\nThe service was **already in a fully operational state** when the self-healing check was initiated. All startup phases (config load \u2192 DB connect \u2192 port bind \u2192 readiness signal \u2192 health check) completed cleanly in the most recent and all prior boot sessions. No FATAL, ERROR, or anomalous log entries were found in either `journalctl` or the application log file.\n",
+  "summary_output_path": "D:\\Flytxt\\CCAD\\ssh-service-demo\\reports\\healing-billing-api.service-20260803-113054.json",
+  "initial_status": {
+    "state": "active (running)",
+    "pid": 15989,
+    "uptime_since": "2026-08-03T05:39:59Z",
+    "restarts_since_boot": 0,
+    "binary": "/usr/bin/python3 /opt/billing-api/app.py",
+    "memory": "11.5M",
+    "cpu": "560ms"
+  },
+  "root_cause_analysis": {
+    "current_incident": "NONE \u2014 service was found healthy on inspection.",
+    "historical_observations": [
+      "Multiple clean stop/start cycles visible across boot sessions (Jul 29, Jul 31, Aug 03), all intentional (Deactivated successfully \u2014 no crash or OOM evidence).",
+      "No FATAL, ERROR, CRITICAL, panic, or exception messages detected in either journalctl or /var/log/billing-api/application.log across the full log history.",
+      "NRestarts=0 confirms no systemd-triggered automatic restarts in the current boot session.",
+      "All startup sequences follow the expected pattern: config load \u2192 DB connect \u2192 bind port 8080 \u2192 ready \u2192 health check passed.",
+      "One GET /health 200 OK request logged at Aug 03 05:22:13 confirms the HTTP layer was responsive before the last planned restart."
+    ],
+    "conclusion": "No failure condition exists. The service is stable, healthy, and requires no corrective action."
+  },
+  "actions_taken": [
+    "STEP 1 \u2014 systemctl is-active billing-api.service          \u2192 returned: active",
+    "STEP 2 \u2014 systemctl status billing-api.service --no-pager  \u2192 confirmed Active: active (running) since 05:39:59 UTC",
+    "STEP 3 \u2014 journalctl -u billing-api.service -n 50          \u2192 no errors or warnings found",
+    "STEP 4 \u2014 cat /var/log/billing-api/application.log (tail)  \u2192 no errors or warnings found",
+    "STEP 5 \u2014 systemctl show (ActiveState/SubState/NRestarts)  \u2192 all nominal",
+    "RESTART SKIPPED \u2014 service is healthy; restart would introduce unnecessary downtime."
+  ],
+  "final_status": {
+    "state": "active (running)",
+    "pid": 15989,
+    "uptime_since": "2026-08-03T05:39:59Z",
+    "restarts_since_boot": 0,
+    "health": "HEALTHY"
+  },
+  "verification_result": {
+    "is_active": true,
+    "no_errors_in_logs": true,
+    "health_check_passed": true,
+    "restart_was_needed": false,
+    "overall": "PASS \u2014 service is fully operational; no intervention required."
+  },
+  "log_evidence": {
+    "most_recent_startup_sequence": [
+      "Aug 03 05:39:59 billing-api[15989]: Loading configuration from /opt/billing-api/config.yaml",
+      "Aug 03 05:39:59 billing-api[15989]: Connecting to database...",
+      "Aug 03 05:39:59 billing-api[15989]: Database connection established",
+      "Aug 03 05:39:59 billing-api[15989]: Server listening on 0.0.0.0:8080",
+      "Aug 03 05:39:59 billing-api[15989]: billing-api started successfully - ready to accept requests",
+      "Aug 03 05:39:59 billing-api[15989]: Health check passed - all dependencies OK"
+    ],
+    "most_recent_http_activity": [
+      "Aug 03 05:22:13 billing-api[108]: GET /health 200 OK"
+    ],
+    "failure_log_evidence": "NONE \u2014 no FATAL/ERROR/CRITICAL/panic/exception entries found across entire log history."
+  },
+  "recommendations": [
+    {
+      "priority": "LOW",
+      "id": "R-01",
+      "title": "Add a Liveness/Readiness HTTP health-check probe",
+      "detail": "Integrate periodic curl/wget probes (e.g., via a systemd timer or external monitor) against http://localhost:8080/health so automated alerting triggers before manual intervention is needed."
+    },
+    {
+      "priority": "LOW",
+      "id": "R-02",
+      "title": "Configure systemd auto-restart policy",
+      "detail": "Add Restart=on-failure and RestartSec=5s to the [Service] unit to enable self-healing at the systemd layer in the event of an unhandled crash, reducing MTTR without human intervention."
+    },
+    {
+      "priority": "LOW",
+      "id": "R-03",
+      "title": "Enable structured log rotation for /var/log/billing-api/application.log",
+      "detail": "Ensure logrotate or the application's own handler caps log size so disk exhaustion does not become a future failure vector."
+    },
+    {
+      "priority": "INFORMATIONAL",
+      "id": "R-04",
+      "title": "Investigate the series of planned stop/start cycles",
+      "detail": "The journal shows several clean Deactivated successfully \u2192 Started cycles across multiple boot sessions. If these are manual restarts, consider automating the triggering condition; if they are deployment events, ensure a zero-downtime rolling strategy is in place."
+    }
+  ]
+}

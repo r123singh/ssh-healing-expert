@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{{ service_name }} — {{ report_id }}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500;600&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <main class="shell">
+    <a class="back" href="/">← All reports</a>
+
+    <header class="hero">
+      <span class="badge {{ status }}">{{ status }}</span>
+      <h1>{{ service_name }}</h1>
+      <p class="sub">{{ report_id }} · {{ timestamp }}</p>
+    </header>
+
+    <section class="grid">
+      <article class="panel">
+        <h2>Overview</h2>
+        <div class="kv">
+          <div><span class="k">Host</span><span class="v">{{ ssh_host }}</span></div>
+          <div><span class="k">Initial</span><span class="v">{{ initial_status }}</span></div>
+          <div><span class="k">Final</span><span class="v">{{ final_status }}</span></div>
+          {% if alert.alert != '—' or alert.severity != '—' %}
+          <div><span class="k">Alert</span><span class="v">{{ alert.alert }} ({{ alert.severity }})</span></div>
+          {% endif %}
+        </div>
+      </article>
+
+      <article class="panel">
+        <h2>Root cause</h2>
+        {% if root_cause.failure_type %}
+        <p><strong>{{ root_cause.failure_type }}</strong></p>
+        {% endif %}
+        <p class="sub" style="margin:0">{{ root_cause.detail }}</p>
+      </article>
+
+      <article class="panel wide">
+        <h2>Actions taken</h2>
+        {% if actions %}
+        <ol class="timeline">
+          {% for a in actions %}
+          <li>
+            <div class="step-num">{{ a.step }}</div>
+            <div class="step-body">
+              <strong>{{ a.action }}</strong>
+              {% if a.result %}<span>{{ a.result }}</span>{% endif %}
+              {% if a.detail %}<span>{{ a.detail }}</span>{% endif %}
+              {% if a.command %}<span class="meta">{{ a.command }}</span>{% endif %}
+              {% if a.timestamp %}<span class="meta">{{ a.timestamp }}</span>{% endif %}
+            </div>
+          </li>
+          {% endfor %}
+        </ol>
+        {% else %}
+        <p class="sub">No actions recorded.</p>
+        {% endif %}
+      </article>
+
+      <article class="panel">
+        <h2>Verification</h2>
+        <div class="kv">
+          {% for key, value in verification.items() %}
+          <div><span class="k">{{ key }}</span><span class="v">{{ value }}</span></div>
+          {% else %}
+          <div><span class="k">result</span><span class="v">—</span></div>
+          {% endfor %}
+        </div>
+      </article>
+
+      <article class="panel">
+        <h2>Recommendations</h2>
+        {% if recommendations %}
+          {% for rec in recommendations %}
+          <div class="rec {{ rec.priority }}">
+            <h3>{% if rec.priority %}{{ rec.priority }} · {% endif %}{{ rec.item }}</h3>
+            <p>{{ rec.detail }}</p>
+          </div>
+          {% endfor %}
+        {% else %}
+        <p class="sub">None</p>
+        {% endif %}
+      </article>
+
+      <article class="panel wide">
+        <h2>Log evidence</h2>
+        {% if log_evidence %}
+          {% for key, lines in log_evidence.items() %}
+          <div class="log-block">
+            <span class="log-label">{{ key }}</span>{% for line in lines %}{{ line }}
+{% endfor %}</div>
+          {% endfor %}
+        {% else %}
+        <p class="sub">No log excerpts saved.</p>
+        {% endif %}
+      </article>
+    </section>
+
+    <details class="raw">
+      <summary>Raw JSON</summary>
+      <pre>{{ raw_json }}</pre>
+    </details>
+  </main>
+</body>
+</html>
